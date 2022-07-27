@@ -3,7 +3,6 @@ package main
 import (
 	"bytes"
 	"fmt"
-	"io/ioutil"
 	"os"
 	"path/filepath"
 	"strings"
@@ -20,6 +19,7 @@ type ConfigLoader struct {
 	delimiters  []string
 }
 
+// NewConfigLoader creates a new ConfigLoader instances with viper and `env` function pre-loaded.
 func NewConfigLoader(opts ...OptFunc) *ConfigLoader {
 	cl := &ConfigLoader{
 		viper: viper.New(),
@@ -35,6 +35,8 @@ func NewConfigLoader(opts ...OptFunc) *ConfigLoader {
 
 type OptFunc func(*ConfigLoader)
 
+// WithVaultClient enables vault function to fetch secrets from Hashicorp Vault.
+// Example: {{ vault "secrets/path" "bar_key" "default_value" }}.
 func WithVaultClient(vaultClient *api.Client) OptFunc {
 	return func(cl *ConfigLoader) {
 		cl.vaultClient = vaultClient
@@ -42,25 +44,30 @@ func WithVaultClient(vaultClient *api.Client) OptFunc {
 	}
 }
 
+// WithDelimiters changes the default template delimiters {{ }}.
 func WithDelimiters(left, right string) OptFunc {
 	return func(cl *ConfigLoader) {
 		cl.delimiters = []string{left, right}
 	}
 }
 
+// WithCustomTemplateFunc registers a custom function to use with the template, similar to `env` and `vault`.
 func WithCustomTemplateFunc(name string, fn interface{}) OptFunc {
 	return func(cl *ConfigLoader) {
 		cl.funcMap[name] = fn
 	}
 }
 
+// Viper returns the underlying viper instance.
 func (cl *ConfigLoader) Viper() *viper.Viper {
 	return cl.viper
 }
 
+// LoadConfigFiles loads and parses one or more config files. The latter files will merge with previous ones in order.
+// Should be followed by Unmarshal to create a struct out of the config.
 func (cl *ConfigLoader) LoadConfigFiles(fileNames ...string) error {
 	for _, fileName := range fileNames {
-		b, err := ioutil.ReadFile(fileName)
+		b, err := os.ReadFile(fileName)
 		if err != nil {
 			return fmt.Errorf("failed to read config file '%s': %w", fileName, err)
 		}
@@ -76,6 +83,8 @@ func (cl *ConfigLoader) LoadConfigFiles(fileNames ...string) error {
 	return nil
 }
 
+// AppendConfig appends a plain string config (similar to a config file but in string), parses and merges it with
+// current config.
 func (cl *ConfigLoader) AppendConfig(config, configType string) error {
 	if err := checkConfigType(configType); err != nil {
 		return err
@@ -104,6 +113,7 @@ func (cl *ConfigLoader) AppendConfig(config, configType string) error {
 	return nil
 }
 
+// Unmarshal unmarshals current config into a struct.
 func (cl *ConfigLoader) Unmarshal(v interface{}) error {
 	if err := cl.viper.Unmarshal(v); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
