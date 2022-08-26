@@ -128,8 +128,10 @@ viper := cl.Viper()
 
 ### Caveats
 
-- Because Go template renders values as-is, so it is up to user to handle non-trivial cases such as multi-line string,
+- Because Go template renders values as-is, so it is up to user to handle non-trivial cases, such as multi-line string,
   unescaped characters, or indenting. It is just Go template under the hood, so you are free to customise your config
   file with any Go template feature.
 - The `vault` function does not cache, so if there are many secrets from the same path, the data will be read multiple
   times.
+- When merging configuration files, all files go through Go template rendering first, then comes the overrides. That 
+  means even if a field is overridden, the base value still needs to be valid in the first place.

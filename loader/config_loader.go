@@ -1,3 +1,5 @@
+// Package loader provides an easy way to load and merge configuration files and decode them into one single
+// configuration struct.
 package loader
 
 import (
@@ -67,7 +69,7 @@ func (cl *ConfigLoader) Viper() *viper.Viper {
 // Should be followed by Unmarshal to create a struct out of the config.
 func (cl *ConfigLoader) LoadConfigFiles(fileNames ...string) error {
 	for _, fileName := range fileNames {
-		b, err := os.ReadFile(fileName)
+		rawFile, err := os.ReadFile(fileName)
 		if err != nil {
 			return fmt.Errorf("failed to read config file '%s': %w", fileName, err)
 		}
@@ -75,7 +77,7 @@ func (cl *ConfigLoader) LoadConfigFiles(fileNames ...string) error {
 		ext := filepath.Ext(fileName)
 		ext = strings.TrimPrefix(ext, ".")
 
-		if err := cl.AppendConfig(string(b), ext); err != nil {
+		if err := cl.AppendConfig(string(rawFile), ext); err != nil {
 			return fmt.Errorf("failed to append config file '%s': %w", fileName, err)
 		}
 	}
