@@ -43,7 +43,7 @@ if err := cl.Unmarshal(&cfg); err != nil {
 
 ### Load values from environment variables
 
-If you need to load secrets from environment variables, use `env` function inside a Go template delimiter.
+If you need to load values from environment variables, use `env` function inside a Go template delimiter.
 
 The default env function is registered as `env` and has the following signature:
 
