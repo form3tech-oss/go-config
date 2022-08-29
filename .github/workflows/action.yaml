@@ -1,0 +1,32 @@
+name: Unit tests
+on: [push]
+jobs:
+  lint:
+    name: Go lint
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+          cache: true
+      - name: golangci-lint
+        uses: golangci/golangci-lint-action@v3
+        with:
+          version: latest
+
+  test:
+    runs-on: ubuntu-latest
+    name: Go test
+    steps:
+      - uses: actions/checkout@v3
+      - name: Setup go
+        uses: actions/setup-go@v3
+        with:
+          go-version-file: 'go.mod'
+          check-latest: true
+          cache: true
+      - name: Run go test
+        run: go test ./... -cover
