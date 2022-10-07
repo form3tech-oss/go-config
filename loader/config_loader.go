@@ -116,8 +116,8 @@ func (cl *ConfigLoader) AppendConfig(config, configType string) error {
 }
 
 // Unmarshal unmarshals current config into a struct.
-func (cl *ConfigLoader) Unmarshal(v interface{}) error {
-	if err := cl.viper.Unmarshal(v); err != nil {
+func (cl *ConfigLoader) Unmarshal(v interface{}, opts ...viper.DecoderConfigOption) error {
+	if err := cl.viper.Unmarshal(v, opts...); err != nil {
 		return fmt.Errorf("failed to unmarshal config: %w", err)
 	}
 	return nil
