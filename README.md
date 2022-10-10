@@ -126,6 +126,18 @@ cl := NewConfigLoader()
 viper := cl.Viper()
 ```
 
+### Decode hooks
+
+As we are using Viper underneath, you can implement your own decode hooks to help with parsing data into necessary structs, for example 
+comma delimited string into string set `map[string]struct{}`
+
+```go
+loader.Unmarshal(&result, viper.DecodeHook(
+    decodehooks.StringToSetHookFunc(","),
+))
+```
+See `TestStringToSetHookFunc` for more details. 
+
 ### Caveats
 
 - Because Go template renders values as-is, so it is up to user to handle non-trivial cases, such as multi-line string,
