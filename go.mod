@@ -1,6 +1,6 @@
 module github.com/form3tech-oss/go-config
 
-go 1.19
+go 1.20
 
 require (
 	github.com/hashicorp/vault v1.11.0
