@@ -7,6 +7,8 @@ import (
 	"github.com/mitchellh/mapstructure"
 )
 
+// TODO szczygi
+
 // StringToSetHookFunc returns a DecodeHookFunc that converts
 // string to map[string]struct{} by splitting on the given separator.
 func StringToSetHookFunc(separator string) mapstructure.DecodeHookFunc {
