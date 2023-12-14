@@ -1,4 +1,4 @@
-package loader
+package loader_test
 
 import (
 	"net"
@@ -6,6 +6,7 @@ import (
 	"strings"
 	"testing"
 
+	"github.com/form3tech-oss/go-config/loader"
 	"github.com/hashicorp/vault/api"
 	"github.com/hashicorp/vault/http"
 	"github.com/hashicorp/vault/vault"
@@ -42,7 +43,6 @@ func initVault(t *testing.T) (net.Listener, *api.Client) {
 }
 
 func TestConfigLoader_AppendConfig(t *testing.T) {
-
 	defaultCfgJson := `
 {
   "a": "default_a",
@@ -56,31 +56,32 @@ func TestConfigLoader_AppendConfig(t *testing.T) {
 	tests := []struct {
 		name     string
 		inputs   [][]string
-		setupFn  func(*testing.T) (*ConfigLoader, CleanupFn)
+		setupFn  func(*testing.T) (*loader.ConfigLoader, CleanupFn)
 		expected Test
 	}{
 		{
 			"two simple overrides",
 			[][]string{
-
 				// JSON config
 				{defaultCfgJson, "json"},
 
 				// Yaml config that overrides b
-				{`
+				{
+					`
 b: override_b
 `, "yaml",
 				},
 
 				// Yaml config that overrides c
-				{`
+				{
+					`
 c:
   val: override_c
 `, "yaml",
 				},
 			},
-			func(*testing.T) (*ConfigLoader, CleanupFn) {
-				return NewConfigLoader(), func() {}
+			func(*testing.T) (*loader.ConfigLoader, CleanupFn) {
+				return loader.NewConfigLoader(), func() {}
 			},
 			Test{
 				A: "default_a",
@@ -91,25 +92,26 @@ c:
 		{
 			"overrides with env",
 			[][]string{
-
 				// default json config
 				{defaultCfgJson, "json"},
 
 				// yaml config that overrides a with env
-				{`
+				{
+					`
 a: {{ env "A_VAL" }}
 `, "yaml",
 				},
 
 				// yaml config that overrides b with env, but takes default value
-				{`
+				{
+					`
 b: {{ env "B_VAL" "override_b_env_default" }}
 `, "yaml",
 				},
 			},
-			func(*testing.T) (*ConfigLoader, CleanupFn) {
+			func(*testing.T) (*loader.ConfigLoader, CleanupFn) {
 				require.Nil(t, os.Setenv("A_VAL", "override_a_env"))
-				return NewConfigLoader(), func() {
+				return loader.NewConfigLoader(), func() {
 					require.Nil(t, os.Unsetenv("A_VAL"))
 				}
 			},
@@ -122,33 +124,33 @@ b: {{ env "B_VAL" "override_b_env_default" }}
 		{
 			"overrides with vault",
 			[][]string{
-
 				// default json config
 				{defaultCfgJson, "json"},
 
 				// yaml config that overrides a with env
-				{`
+				{
+					`
 a: {{ vault "secret/test" "A_VAL" }}
 `, "yaml",
 				},
 
 				// yaml config that overrides b with env, but takes default value
-				{`
+				{
+					`
 b: {{ vault "secret/test" "B_VAL" "override_b_vault_default" }}
 `, "yaml",
 				},
 			},
-			func(*testing.T) (*ConfigLoader, CleanupFn) {
+			func(*testing.T) (*loader.ConfigLoader, CleanupFn) {
 				ln, vc := initVault(t)
 				_, err := vc.Logical().Write("secret/test", map[string]interface{}{
 					"A_VAL": "override_a_vault",
 				})
 				require.Nil(t, err)
 
-				return NewConfigLoader(WithVaultClient(vc)), func() {
+				return loader.NewConfigLoader(loader.WithVaultClient(vc)), func() {
 					require.Nil(t, ln.Close())
 				}
-
 			},
 			Test{
 				A: "override_a_vault",
@@ -159,19 +161,19 @@ b: {{ vault "secret/test" "B_VAL" "override_b_vault_default" }}
 		{
 			"overrides with env custom delimiters",
 			[][]string{
-
 				// default json config
 				{defaultCfgJson, "json"},
 
 				// yaml config that overrides a with env, use [[ ]] as delimiters
-				{`
+				{
+					`
 a: [[ env "A_VAL" ]]
 `, "yaml",
 				},
 			},
-			func(*testing.T) (*ConfigLoader, CleanupFn) {
+			func(*testing.T) (*loader.ConfigLoader, CleanupFn) {
 				require.Nil(t, os.Setenv("A_VAL", "override_a_env"))
-				return NewConfigLoader(WithDelimiters("[[", "]]")), func() {
+				return loader.NewConfigLoader(loader.WithDelimiters("[[", "]]")), func() {
 					require.Nil(t, os.Unsetenv("A_VAL"))
 				}
 			},
@@ -184,18 +186,18 @@ a: [[ env "A_VAL" ]]
 		{
 			"overrides with custom template func",
 			[][]string{
-
 				// default json config
 				{defaultCfgJson, "json"},
 
 				// yaml config that overrides a with env, register strings.ToUpper as uppercase func in template
-				{`
+				{
+					`
 a: {{ uppercase "override_a" }}
 `, "yaml",
 				},
 			},
-			func(*testing.T) (*ConfigLoader, CleanupFn) {
-				return NewConfigLoader(WithCustomTemplateFunc("uppercase", strings.ToUpper)), func() {}
+			func(*testing.T) (*loader.ConfigLoader, CleanupFn) {
+				return loader.NewConfigLoader(loader.WithCustomTemplateFunc("uppercase", strings.ToUpper)), func() {}
 			},
 			Test{
 				A: "OVERRIDE_A",
@@ -231,7 +233,7 @@ a: {{ uppercase "override_a" }}
 func TestConfigLoader_LoadConfigFiles(t *testing.T) {
 	require.Nil(t, os.Setenv("B_VAL", "override_b"))
 
-	cl := NewConfigLoader()
+	cl := loader.NewConfigLoader()
 	err := cl.LoadConfigFiles(
 		"tests/default.yaml",
 		"tests/override.json",
