@@ -1,15 +1,12 @@
 package loader_test
 
 import (
-	"net"
 	"os"
 	"strings"
 	"testing"
 
 	"github.com/form3tech-oss/go-config/loader"
 	"github.com/hashicorp/vault/api"
-	"github.com/hashicorp/vault/http"
-	"github.com/hashicorp/vault/vault"
 	"github.com/stretchr/testify/require"
 )
 
@@ -25,21 +22,18 @@ type Test struct {
 
 type CleanupFn func()
 
-func initVault(t *testing.T) (net.Listener, *api.Client) {
+func initVault(t *testing.T) (*api.Client) {
 	t.Helper()
 
-	core, _, token := vault.TestCoreUnsealed(t)
-	listener, addr := http.TestServer(t, core)
-
 	cfg := api.DefaultConfig()
-	cfg.Address = addr
+	cfg.Address = "http://localhost:8200"
 
 	client, err := api.NewClient(cfg)
 	require.Nil(t, err)
 
-	client.SetToken(token)
+	client.SetToken("dev-token")
 
-	return listener, client
+	return client
 }
 
 func TestConfigLoader_AppendConfig(t *testing.T) {
@@ -142,15 +136,13 @@ b: {{ vault "secret/test" "B_VAL" "override_b_vault_default" }}
 				},
 			},
 			func(*testing.T) (*loader.ConfigLoader, CleanupFn) {
-				ln, vc := initVault(t)
+				vc := initVault(t)
 				_, err := vc.Logical().Write("secret/test", map[string]interface{}{
 					"A_VAL": "override_a_vault",
 				})
 				require.Nil(t, err)
 
-				return loader.NewConfigLoader(loader.WithVaultClient(vc)), func() {
-					require.Nil(t, ln.Close())
-				}
+				return loader.NewConfigLoader(loader.WithVaultClient(vc)), func() {}
 			},
 			Test{
 				A: "override_a_vault",

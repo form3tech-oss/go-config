@@ -29,4 +29,4 @@ jobs:
           check-latest: true
           cache: true
       - name: Run go test
-        run: go test ./... -cover
+        run: make test
