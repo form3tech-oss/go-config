@@ -1,0 +1,18 @@
+version: '3'
+services:
+  vault:
+    #v1.13.3
+    image: docker.io/library/vault@sha256:575ab3ff8a94d2fabbf11c612737ba43228c8c75624148e3753251ce74fb2eb6
+    ports:
+      - "8200:8200"
+    environment:
+      - SKIP_SETCAP=1
+      - VAULT_LOG_LEVEL=trace
+      - VAULT_DEV_ROOT_TOKEN_ID=dev-token
+      - VAULT_TLS_SERVER_NAME=localhost
+    command: server -dev -dev-kv-v1
+    healthcheck:
+      test: ["CMD", "wget", "http://localhost:8200/v1/sys/health", "-O", "/dev/null", "-q"]
+      interval: 1s
+      timeout: 30s
+      retries: 10
